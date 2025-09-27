@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: rgb(7, 7, 7);
+        margin: 0;
+      }
+      .send-button {
+        background-color: rgb(25, 135, 84);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        margin-left: 10px;
+        font-size: 18px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .chat-input {
+        padding: 12px 15px;
+        border-radius: 10px;
+        border-width: 1px;
+        font-size: 18px;
+        flex-grow: 1;
+      }
+      .chat-input-container {
+        display: flex;
+        margin-bottom: 60px;
+      }
+      .app-container {
+        display: flex;
+        flex-direction: column;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 100vh;
+      }
+
+      .chat-message-user {
+        display: flex;
+        justify-content: end;
+        align-items: start;
+      }
+      .chat-message-robot {
+        display: flex;
+        align-items: start;
+      }
+
+      .chat-message-text {
+        background-color: rgb(238, 238, 238);
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-right: 10px;
+        margin-left: 10px;
+        margin-bottom: 20px;
+        max-width: 300px;
+      }
+      .chat-message-profile {
+        width: 45px;
+      }
+
+      .chat-messages-container {
+        flex-grow: 1;
+        margin-top: 20px;
+        overflow: scroll;
+        scrollbar-width: none;
+      }
+
+      /* New CSS for the Thinking Indicator */
+      .thinking-dot {
+        height: 10px;
+        width: 10px;
+        background-color: #bbb;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 2px;
+        animation: loading-bounce 1.4s infinite ease-in-out both;
+      }
+      .thinking-dot:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+      .thinking-dot:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+      @keyframes loading-bounce {
+        0%,
+        80%,
+        100% {
+          transform: scale(0);
+        }
+        40% {
+          transform: scale(1);
+        }
+      }
+      .thinking-indicator-text {
+        background-color: rgb(238, 238, 238);
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-left: 10px;
+        margin-bottom: 20px;
+        max-width: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        width: 50px; /* Fixed width for the dots */
+      }
+      .chat-header {
+        background-color: rgb(25, 135, 84);
+        color: white;
+        padding: 10px 15px;
+        font-size: 24px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="js-container"></div>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/supersimpledev@8.6.4/chatbot.js"></script>
+    <script src="https://unpkg.com/supersimpledev/babel.js "></script>
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel">
+      // New Component for the thinking icon
+      function ThinkingIndicator() {
+        return (
+          <div className="chat-message-robot">
+            <img src="robot.png" className="chat-message-profile" />
+            <div className="thinking-indicator-text">
+              <span className="thinking-dot"></span>
+              <span className="thinking-dot"></span>
+              <span className="thinking-dot"></span>
+            </div>
+          </div>
+        );
+      }
+      function ChatHeader() {
+        return <div className="chat-header">ChatBot</div>;
+      }
+
+      function ChatInput({ chatMessages, setChatMessages, setLoading }) {
+        const [inputText, setInputText] = React.useState("");
+
+        function saveInputText(e) {
+          setInputText(e.target.value);
+        }
+
+        function sendMessage() {
+          if (!inputText.trim()) return; // Prevent sending empty messages
+
+          // 1. Add user message
+          const userMessage = {
+            message: inputText,
+            sender: "user",
+            id: crypto.randomUUID(),
+          };
+
+          // 2. Add user message and set loading state to true
+          setChatMessages([...chatMessages, userMessage]);
+          setLoading(true);
+
+          // Simulate network delay before getting robot's response
+          setTimeout(() => {
+            const response = Chatbot.getResponse(inputText);
+
+            // 3. Add robot message and set loading state to false
+            setChatMessages((currentMessages) => [
+              ...currentMessages,
+              {
+                message: response,
+                sender: "robot",
+                id: crypto.randomUUID(),
+              },
+            ]);
+            setLoading(false);
+          }, 1000); // 1-second delay for simulation
+
+          setInputText("");
+        }
+        return (
+          <div className="chat-input-container">
+            <input
+              placeholder="Send a message to Chatbot"
+              size="50"
+              onChange={saveInputText}
+              value={inputText}
+              className="chat-input"
+            />
+            <button onClick={sendMessage} className="send-button">
+              Send
+            </button>
+          </div>
+        );
+      }
+
+      function ChatMessage({ message, sender }) {
+        return (
+          <div
+            className={
+              sender === "user" ? "chat-message-user" : "chat-message-robot"
+            }
+          >
+            {sender === "robot" && (
+              <img src="robot.png" className="chat-message-profile" />
+            )}
+            <div className="chat-message-text">{message}</div>
+            {sender === "user" && (
+              <img src="user.png" className="chat-message-profile" />
+            )}
+          </div>
+        );
+      }
+
+      function ChatMessages({ chatMessages, loading }) {
+        const chatMessagesRef = React.useRef(null);
+
+        // Scroll to bottom whenever messages or loading state changes
+        React.useEffect(() => {
+          const containerEle = chatMessagesRef.current;
+          if (containerEle) {
+            containerEle.scrollTop = containerEle.scrollHeight;
+          }
+        }, [chatMessages, loading]);
+
+        return (
+          <div className="chat-messages-container" ref={chatMessagesRef}>
+            {chatMessages.map((chatMessage) => {
+              return (
+                <ChatMessage
+                  message={chatMessage.message}
+                  sender={chatMessage.sender}
+                  key={chatMessage.id}
+                />
+              );
+            })}
+            {/* Display the thinking icon when loading is true */}
+            {loading && <ThinkingIndicator />}
+          </div>
+        );
+      }
+
+      function App() {
+        const [chatMessages, setChatMessages] = React.useState([]);
+        const [loading, setLoading] = React.useState(false); // New state for loading indicator
+
+        return (
+          <div className="app-container">
+            <ChatHeader />
+            <ChatMessages chatMessages={chatMessages} loading={loading} />
+            <ChatInput
+              chatMessages={chatMessages}
+              setChatMessages={setChatMessages}
+              setLoading={setLoading} // Pass setLoading function
+            />
+          </div>
+        );
+      }
+
+      const container = document.querySelector(".js-container");
+      ReactDOM.createRoot(container).render(<App />);
+    </script>
+  </body>
+</html>
